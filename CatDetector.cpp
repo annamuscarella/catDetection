@@ -4,8 +4,8 @@
 
 #include "CatDetector.h"
 int CatDetector::initialize() {
-    String cat_cascade_name = "haarcascade_frontalcatface.xml";
-    String cat_cascade_extended_name = "haarcascade_frontalcatface_extended.xml";
+    String cat_cascade_name = "../resources/haarcascade_frontalcatface.xml";
+    String cat_cascade_extended_name = "../resources/haarcascade_frontalcatface_extended.xml";
 
     if( !cat_cascade.load( cat_cascade_name) ){ printf("--(!)Error loading\n"); return -1; };
     if( !cat_cascade_extended.load( cat_cascade_extended_name) ){ printf("--(!)Error loading\n"); return -1; };

@@ -5,9 +5,9 @@
 #include "FaceDetector.h"
 
 int FaceDetector::initialize() {
-    String face_cascade_name = "haarcascade_frontalface_default.xml";
-    String eyes_cascade_name = "haarcascade_eye_tree_eyeglasses.xml";
-    String smile_cascade_name = "haarcascade_smile.xml";
+    String face_cascade_name = "../resources/haarcascade_frontalface_default.xml";
+    String eyes_cascade_name = "../resources/haarcascade_eye_tree_eyeglasses.xml";
+    String smile_cascade_name = "../resources/haarcascade_smile.xml";
     if( !face_cascade.load( face_cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
     if( !eyes_cascade.load( eyes_cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
     if( !smile_cascade.load( eyes_cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };

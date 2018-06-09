@@ -1,111 +1,173 @@
-//
-// Created by Anna Bendel on 12.05.18.
-//
-
-#include <opencv2/dnn.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/core/utils/trace.hpp>
-using namespace cv;
-using namespace cv::dnn;
-#include <fstream>
 #include <iostream>
-#include <cstdlib>
+#include <opencv2/opencv.hpp>
+#include "FaceDetector.h"
+#include "CatDetector.h"
+
+#include <opencv2/tracking.hpp>
+#include <opencv2/core/ocl.hpp>
+
+using namespace cv;
 using namespace std;
-/* Find best class for the blob (i. e. class with maximal probability) */
-static void getMaxClass(const Mat &probBlob, int *classId, double *classProb)
-{
-    Mat probMat = probBlob.reshape(1, 1); //reshape the blob to 1x1000 matrix
-    Point classNumber;
-    minMaxLoc(probMat, NULL, classProb, NULL, &classNumber);
-    *classId = classNumber.x;
-}
-static std::vector<String> readClassNames(const char *filename )
-{
-    std::vector<String> classNames;
-    std::ifstream fp(filename);
-    if (!fp.is_open())
-    {
-        std::cerr << "File with classes labels not found: " << filename << std::endl;
-        exit(-1);
-    }
-    std::string name;
-    while (!fp.eof())
-    {
-        std::getline(fp, name);
-        if (name.length())
-            classNames.push_back( name.substr(name.find(' ')+1) );
-    }
-    fp.close();
-    return classNames;
-}
-const char* params
-    = "{ help           | false | Sample app for loading googlenet model }"
-      "{ proto          | bvlc_googlenet.prototxt | model configuration }"
-      "{ model          | bvlc_googlenet.caffemodel | model weights }"
-      "{ label          | classification_classes.txt | names of ILSVRC2012 classes }"
-      "{ image          | WinstonTest.png | path to image file }"
-      "{ opencl         | false | enable OpenCL }"
-;
-int main(int argc, char **argv)
-{
-    CV_TRACE_FUNCTION();
-    CommandLineParser parser(argc, argv, params);
-    if (parser.get<bool>("help"))
-    {
-        parser.printMessage();
-        return 0;
-    }
-    String modelTxt = parser.get<string>("proto");
-    String modelBin = parser.get<string>("model");
-    String imageFile = parser.get<String>("image");
-    String classNameFile = parser.get<String>("label");
-    Net net;
-    try {
-        net = dnn::readNetFromCaffe(modelTxt, modelBin);
-    }
-    catch (const cv::Exception& e) {
-        std::cerr << "Exception: " << e.what() << std::endl;
-        if (net.empty())
-        {
-            std::cerr << "Can't load network by using the following files: " << std::endl;
-            std::cerr << "prototxt:   " << modelTxt << std::endl;
-            std::cerr << "caffemodel: " << modelBin << std::endl;
-            std::cerr << "bvlc_googlenet.caffemodel can be downloaded here:" << std::endl;
-            std::cerr << "http://dl.caffe.berkeleyvision.org/bvlc_googlenet.caffemodel" << std::endl;
-            exit(-1);
+
+FaceDetector faceDetector;
+CatDetector catDetector;
+
+int main() {
+
+    faceDetector.initialize();
+    catDetector.initialize();
+
+    //VideoCapture stream1(0);
+    //if (!stream1.isOpened()) { //check if video device has been initialised
+      //  std::cout << "cannot open camera";
+    //}
+
+    std::string filename = "../resources/CatDetectionTest2.mov";
+    VideoCapture stream1(filename);
+    if (!stream1.isOpened()) { //check if video device has been initialised
+         std::cout << "cannot open camera";
         }
+
+//unconditional loop
+    while (true) {
+
+        Mat cameraFrame, frame_gray;
+        stream1.read(cameraFrame);
+
+        faceDetector.detectFaces(cameraFrame);
+        catDetector.detectCats(cameraFrame);
+        std::cout << "Amount of faces: " << faceDetector.faces.size() << std::endl;
+        std::cout << "Amount of cats: " << faceDetector.faceRects.size() << std::endl;
+        faceDetector.drawFaces(cameraFrame);
+        catDetector.drawCats(cameraFrame);
+        /*for( size_t i = 0; i < faces.size(); i++ )
+        {
+            Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
+            ellipse( cameraFrame, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+
+            Mat faceROI = frame_gray( faces[i] );
+            std::vector<Rect> eyes;
+
+            //-- In each face, detect eyes
+            eyes_cascade.detectMultiScale( faceROI, eyes, 1.1, 2, 0 |CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+
+            for( size_t j = 0; j < eyes.size(); j++ )
+            {
+                Point center( faces[i].x + eyes[j].x + eyes[j].width*0.5, faces[i].y + eyes[j].y + eyes[j].height*0.5 );
+                int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
+                circle( cameraFrame, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
+            }
+        }*/
+        /*std::vector<Rect> smiles;
+        if (faceDetector.faces.size() > 0){
+            smiles = faceDetector.detectSmile(faceDetector.faces[0], cameraFrame);
+            if(smiles.size() > 0) std::cout << "smile detected!"<<std::endl;
+        }*/
+
+
+        imshow("cam", cameraFrame);
+
+        if ((waitKey(1) & 0xEFFFFF) == 27)
+            break;
     }
-    if (parser.get<bool>("opencl"))
-    {
-        net.setPreferableTarget(DNN_TARGET_OPENCL);
-    }
-    Mat img = imread(imageFile);
-    if (img.empty())
-    {
-        std::cerr << "Can't read image from the file: " << imageFile << std::endl;
-        exit(-1);
-    }
-    //GoogLeNet accepts only 224x224 BGR-images
-    Mat inputBlob = blobFromImage(img, 1.0f, Size(224, 224),
-                                  Scalar(104, 117, 123), false);   //Convert Mat to batch of images
-    net.setInput(inputBlob, "data");        //set the network input
-    Mat prob = net.forward("prob");         //compute output
-    cv::TickMeter t;
-    for (int i = 0; i < 10; i++)
-    {
-        CV_TRACE_REGION("forward");
-        net.setInput(inputBlob, "data");        //set the network input
-        t.start();
-        prob = net.forward("prob");                          //compute output
-        t.stop();
-    }
-    int classId;
-    double classProb;
-    getMaxClass(prob, &classId, &classProb);//find the best class
-    std::vector<String> classNames = readClassNames(classNameFile.c_str());
-    std::cout << "Best class: #" << classId << " '" << classNames.at(classId) << "'" << std::endl;
-    std::cout << "Probability: " << classProb * 100 << "%" << std::endl;
-    std::cout << "Time: " << (double)t.getTimeMilli() / t.getCounter() << " ms (average from " << t.getCounter() << " iterations)" << std::endl;
     return 0;
-} //main
+}
+
+
+
+int main_failed(int argc, char **argv)
+{
+    // List of tracker types in OpenCV 3.2
+    // NOTE : GOTURN implementation is buggy and does not work.
+    string trackerTypes[6] = {"BOOSTING", "MIL", "KCF", "TLD","MEDIANFLOW", "GOTURN"};
+    // vector <string> trackerTypes(types, std::end(types));
+
+    // Create a tracker
+    string trackerType = trackerTypes[2];
+
+    Ptr<Tracker> tracker;
+
+#if (CV_MINOR_VERSION < 3)
+    {
+        tracker = Tracker::create(trackerType);
+    }
+#else
+    {
+        if (trackerType == "BOOSTING")
+            tracker = TrackerBoosting::create();
+        if (trackerType == "MIL")
+            tracker = TrackerMIL::create();
+        if (trackerType == "KCF")
+            tracker = TrackerKCF::create();
+        if (trackerType == "TLD")
+            tracker = TrackerTLD::create();
+        if (trackerType == "MEDIANFLOW")
+            tracker = TrackerMedianFlow::create();
+        if (trackerType == "GOTURN")
+            tracker = TrackerGOTURN::create();
+    }
+#endif
+    // Read video
+    VideoCapture video("CatDetectionTest2.mov");
+
+    // Exit if video is not opened
+    if(!video.isOpened())
+    {
+        cout << "Could not read video file" << endl;
+        return 1;
+
+    }
+
+    // Read first frame
+    Mat frame;
+    bool ok = video.read(frame);
+
+    // Define initial boundibg box
+    Rect2d bbox(287, 23, 86, 320);
+
+    // Uncomment the line below to select a different bounding box
+    bbox = selectROI(frame, false);
+
+    // Display bounding box.
+    rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 );
+    imshow("Tracking", frame);
+
+    tracker->init(frame, bbox);
+
+    while(video.read(frame))
+    {
+        // Start timer
+        double timer = (double)getTickCount();
+
+        // Update the tracking result
+        bool ok = tracker->update(frame, bbox);
+
+        // Calculate Frames per second (FPS)
+        float fps = getTickFrequency() / ((double)getTickCount() - timer);
+
+        if (ok)
+        {
+            // Tracking success : Draw the tracked object
+            rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 );
+        }
+        else
+        {
+            // Tracking failure detected.
+            putText(frame, "Tracking failure detected", Point(100,80), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0,0,255),2);
+        }
+
+        // Display tracker type on frame
+        putText(frame, trackerType + " Tracker", Point(100,20), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(50,170,50),2);
+
+        // Display frame.
+        imshow("Tracking", frame);
+
+        // Exit if ESC pressed.
+        int k = waitKey(1);
+        if(k == 27)
+        {
+            break;
+        }
+
+    }
+}
