@@ -11,7 +11,7 @@ using namespace std;
 
 FaceDetector faceDetector;
 CatDetector catDetector;
-bool display = true;
+bool display = false;
 
 int main(int argc, char * argv[]) {
 
