@@ -11,7 +11,7 @@ using namespace std;
 
 FaceDetector faceDetector;
 CatDetector catDetector;
-bool display = false;
+bool display = true;
 
 char* getCmdOption(char ** begin, char ** end, const std::string & option)
 {
@@ -31,6 +31,12 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
 int main(int argc, char * argv[]) {
 
     VideoCapture stream;
+
+    if(cmdOptionExists(argv, argv+argc, "--nodisplay"))
+    {
+        std::cout << "Display disabled" << std::endl;
+        display = false;
+    }
 
     if(cmdOptionExists(argv, argv+argc, "--camera"))
     {
