@@ -13,7 +13,7 @@ FaceDetector faceDetector;
 CatDetector catDetector;
 
 int main() {
-
+    namedWindow("", WINDOW_NORMAL);
     faceDetector.initialize();
     catDetector.initialize();
 
@@ -63,10 +63,7 @@ int main() {
             smiles = faceDetector.detectSmile(faceDetector.faces[0], cameraFrame);
             if(smiles.size() > 0) std::cout << "smile detected!"<<std::endl;
         }*/
-
-
-        imshow("cam", cameraFrame);
-
+                    imshow("cam", cameraFrame);
         if ((waitKey(1) & 0xEFFFFF) == 27)
             break;
     }
