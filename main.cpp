@@ -13,30 +13,59 @@ FaceDetector faceDetector;
 CatDetector catDetector;
 bool display = false;
 
+char* getCmdOption(char ** begin, char ** end, const std::string & option)
+{
+    char ** itr = std::find(begin, end, option);
+    if (itr != end && ++itr != end)
+    {
+        return *itr;
+    }
+    return 0;
+}
+
+bool cmdOptionExists(char** begin, char** end, const std::string& option)
+{
+    return std::find(begin, end, option) != end;
+}
+
 int main(int argc, char * argv[]) {
+
+    VideoCapture stream;
+
+    if(cmdOptionExists(argv, argv+argc, "--camera"))
+    {
+        VideoCapture streamFromCamera(0);
+        if (!streamFromCamera.isOpened()) { //check if video device has been initialised
+        std::cout << "cannot open camera";
+        }
+        stream = streamFromCamera;
+    }
+
+    else if(cmdOptionExists(argv, argv+argc, "-file"))
+    {
+        char * filename = getCmdOption(argv, argv + argc, "-file");
+        std::stringstream pathname;
+        pathname << "../resources/" << filename;
+        VideoCapture streamFromFile(pathname.str());
+        if (!streamFromFile.isOpened()) { //check if video device has been initialised
+            std::cout << "cannot open camera";
+        }
+        stream = streamFromFile;
+    }
+
+    if(stream.isOpened()){
+        std::cout << "Cannot open videostream. Exit.";
+    }
+
 
     faceDetector.initialize();
     catDetector.initialize();
-
-    for(int i = 0; i < argc; i++){
-        std::cout << "Argument "<< i << " = " << argv[i] << std::endl;
-    }
-    //VideoCapture stream1(0);
-    //if (!stream1.isOpened()) { //check if video device has been initialised
-      //  std::cout << "cannot open camera";
-    //}
-
-    std::string filename = "../resources/CatDetectionTest2.mov";
-    VideoCapture stream1(filename);
-    if (!stream1.isOpened()) { //check if video device has been initialised
-         std::cout << "cannot open camera";
-        }
 
 //unconditional loop
     while (true) {
 
         Mat cameraFrame, frame_gray;
-        stream1.read(cameraFrame);
+        stream.read(cameraFrame);
 
         faceDetector.detectFaces(cameraFrame);
         catDetector.detectCats(cameraFrame);
