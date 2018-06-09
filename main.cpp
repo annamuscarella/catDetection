@@ -11,12 +11,16 @@ using namespace std;
 
 FaceDetector faceDetector;
 CatDetector catDetector;
+bool display = true;
 
-int main() {
-    namedWindow("", WINDOW_NORMAL);
+int main(int argc, char * argv[]) {
+
     faceDetector.initialize();
     catDetector.initialize();
 
+    for(int i = 0; i < argc; i++){
+        std::cout << "Argument "<< i << " = " << argv[i] << std::endl;
+    }
     //VideoCapture stream1(0);
     //if (!stream1.isOpened()) { //check if video device has been initialised
       //  std::cout << "cannot open camera";
@@ -63,7 +67,17 @@ int main() {
             smiles = faceDetector.detectSmile(faceDetector.faces[0], cameraFrame);
             if(smiles.size() > 0) std::cout << "smile detected!"<<std::endl;
         }*/
-                    imshow("cam", cameraFrame);
+        if(display) {
+            try {
+                imshow("cam", cameraFrame);
+            }
+            catch (Exception e) {
+                std::cout << e.msg << std::endl;
+                display = false;
+                std::cout << "Display cannot be found. Disables displaying frames" << std::endl;
+
+            }
+        }
         if ((waitKey(1) & 0xEFFFFF) == 27)
             break;
     }
