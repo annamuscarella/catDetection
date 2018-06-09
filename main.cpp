@@ -42,8 +42,6 @@ int main(int argc, char * argv[]) {
         catDetector.detectCats(cameraFrame);
         std::cout << "Amount of faces: " << faceDetector.faces.size() << std::endl;
         std::cout << "Amount of cats: " << faceDetector.faceRects.size() << std::endl;
-        faceDetector.drawFaces(cameraFrame);
-        catDetector.drawCats(cameraFrame);
         /*for( size_t i = 0; i < faces.size(); i++ )
         {
             Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
@@ -69,6 +67,8 @@ int main(int argc, char * argv[]) {
         }*/
         if(display) {
             try {
+                faceDetector.drawFaces(cameraFrame);
+                catDetector.drawCats(cameraFrame);
                 imshow("cam", cameraFrame);
             }
             catch (Exception e) {
